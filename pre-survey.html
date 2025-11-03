@@ -1,1 +1,52 @@
+#Instructions 
+<!DOCTYPE html>
+<html>
+  <head>
+    <tite> Robotics Study Instructions </tite>
+    <style>
+      nav {
+        background-color: #003366;
+        padding: 12px;
+        text-align: center;
+      }
+      nav a {
+        color: white;
+        margin: 0 15px;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      nav a:hover{
+        tetx-decoration: underline; 
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="index.html"> Instructions </a>
+      <a href="pre-survey.html"> Pre-Study Survey </a>
+      <a href="studyInteractino.html"> Study Interaction </a>
+      <a href="post-survey.html"> Post-Study Survey </a>
+    </nav>
+    <h2> Pre-Study Survey </h2>
+    <form id="preForm">
+      <!-- Repeat for number of questions 
+      <label> </label>
+      <input><br></br> --> 
+    </form>
+
+    <script>
+      document.getElementById('preform').addEventListener('submit', e => {
+        e.preventDefault();
+        const data = Object.fromEnteries(new FormData(e.target).enteries());
+
+        fetch('Data Collection URL (Excel Sheet)', {
+          method: 'POST',
+          body: JSON.stringigy({ type: 'preSurvey', data})
+        }).then(()=> {
+          window.location.href='studyInteraction.html';
+        }); 
+      }); 
+    </script>
+  </body>
+</html>
 
