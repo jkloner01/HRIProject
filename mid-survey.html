@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <tite> Mid-Survey </tite>
+    <title> Mid-Survey </title>
     <style>
       nav {
         background-color: #003366;
@@ -14,11 +14,37 @@
         text-decoration: none;
         font-weight: bold;
       }
-      nav a:hover{
+      nav a:hover {
         text-decoration: underline; 
+      }
+
+      /* Responsive iframe container */
+      .survey-container {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 140%; /* mobile height ratio */
+      }
+
+      .survey-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      /* Desktop override */
+      @media (min-width: 768px) {
+        .survey-container {
+          height: 900px; 
+          padding-bottom: 0;
+        }
       }
     </style>
   </head>
+
   <body>
     <nav>
       <a href="index.html"> Instructions </a>
@@ -28,34 +54,14 @@
       <a href="post-survey.html"> Post-Study Survey </a>
       <a href="pythonsetup.html"> Set Up Instructions</a>
     </nav>
+
     <h2> Mid-Study Survey </h2>
-    <a href="https://tufts.qualtrics.com/jfe/form/SV_5gXrl4StxAnMado">Click Here To Take The Survey</a>
-    <form id="preForm">
-       <!-- Repeat for number of questions 
-      1-5 answers
-      <label> </label> 
-      <input><br></br>
 
-      open ended 
-      <label> </label>
-      <textarea></textarea><br></br>
-      --> 
-      <button type="submit">Submit</button>
-    </form>
+    <div class="survey-container">
+      <iframe 
+        src="https://tufts.qualtrics.com/jfe/form/SV_5gXrl4StxAnMado">
+      </iframe>
+    </div>
 
-    <script>
-      document.getElementById('preform').addEventListener('submit', e => {
-        e.preventDefault();
-        const data = Object.fromEnteries(new FormData(e.target).enteries());
-
-        fetch('Data Collection URL (Excel Sheet)', {
-          method: 'POST',
-          body: JSON.stringigy({ type: 'preSurvey', data})
-        }).then(()=> {
-          window.location.href='studyInteraction.html';
-        }); 
-      }); 
-    </script>
   </body>
 </html>
-
