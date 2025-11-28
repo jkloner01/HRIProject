@@ -1,17 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Study Interaction</title>
+  <title>Study Interaction & Sphero Setup</title>
   <style>
-    nav { background-color: #003366; padding: 12px; text-align: center; }
-    nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+    /* --- Navigation --- */
+    nav {
+      background-color: #003366;
+      padding: 12px;
+      text-align: center;
+    }
+    nav a {
+      color: white;
+      margin: 0 15px;
+      text-decoration: none;
+      font-weight: bold;
+    }
     nav a:hover { text-decoration: underline; }
-    button { margin: 5px; padding: 10px 15px; font-size: 16px; }
-    .survey-container { margin-top: 30px; padding: 15px; border: 1px solid #ccc; }
+
+    /* --- Buttons --- */
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 16px;
+    }
+
+    /* --- Status text --- */
+    #status, #manualStatus {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    /* --- Survey container --- */
+    .survey-container {
+      margin-top: 30px;
+      padding: 15px;
+      border: 1px solid #ccc;
+    }
+
+    /* --- Responsive PDF container --- */
+    .pdf-container {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 140%;
+      margin-top: 30px;
+    }
+    .pdf-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    @media (min-width: 768px) {
+      .pdf-container {
+        height: 900px;
+        padding-bottom: 0;
+      }
+    }
   </style>
 </head>
 <body>
 
+<!-- --- Navigation --- -->
 <nav>
   <a href="index.html">Instructions</a>
   <a href="pythonsetup.html">Set Up Instructions</a>
@@ -21,8 +73,17 @@
   <a href="post-survey.html">Post-Study Survey</a>
 </nav>
 
+<h1>Learn how to set up the Sphero</h1>
+
+<!-- --- Embedded PDF --- -->
+<div class="pdf-container">
+  <iframe 
+    src="https://docs.google.com/gview?url=https://raw.githubusercontent.com/jkloner01/HRIProject/main/Python%20Sphero%20Setup.pdf&embedded=true">
+  </iframe>
+</div>
+
 <h2>Study Session</h2>
-<p>Click "Start Study" when you begin, "Stretch" when you stretch, and "Stop Study" when you end.</p>
+<p>Click "Start Study" when you begin, "Stretch" when you stretch, and "Stop Study" when you end. Keep this page open while studying.</p>
 
 <button id="startBtn">Start Study</button>
 <button id="stretchBtn" disabled>Stretch</button>
@@ -46,7 +107,7 @@
 
 <script>
   // --- Google Apps Script Web App URL ---
-  const DATA_URL = "https://script.google.com/macros/s/AKfycbxe5HMIafrUoe44NW6PzYGL-vtOkYwiNnYlXkg3g00KOLZZu1mZ0g3nKKQaL93smgEt/exec";
+  const DATA_URL = "https://script.google.com/macros/s/AKfycbwXChzEV5Dev19AT0JVA2hLowzUKvYg5V2RqzKku_lDW7ceC4GtDuB-Uhx-8EdPNU0l/exec";
 
   // --- Variables ---
   let startTime = null;
@@ -58,7 +119,24 @@
   const stopBtn = document.getElementById('stopBtn');
   const status = document.getElementById('status');
 
-  // --- Button Handlers ---
+  // --- Helper function for POST requests ---
+  async function postData(data) {
+    try {
+      const response = await fetch(DATA_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+      const result = await response.json();
+      return result;
+    } catch (err) {
+      console.error("Error sending data:", err);
+      throw err;
+    }
+  }
+
+  // --- Study session buttons ---
   startBtn.onclick = () => {
     startTime = Date.now();
     stretchCount = 0;
@@ -77,7 +155,7 @@
     status.textContent = `Stretch taken at ${elapsedSec}s. Total stretches: ${stretchCount}`;
   };
 
-  stopBtn.onclick = () => {
+  stopBtn.onclick = async () => {
     const endTime = Date.now();
     const totalTimeSec = ((endTime - startTime)/1000).toFixed(1);
 
@@ -89,16 +167,12 @@
       stretchTimes
     };
 
-    fetch(DATA_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(sessionData)
-    })
-    .then(() => alert("Study session saved successfully!"))
-    .catch(err => {
-      console.error(err);
-      alert("Error saving study session data.");
-    });
+    try {
+      await postData(sessionData);
+      alert("Study session saved successfully!");
+    } catch {
+      alert("Error saving study session data. Check console for details.");
+    }
 
     startBtn.disabled = false;
     stretchBtn.disabled = true;
@@ -110,7 +184,7 @@
   const manualForm = document.getElementById('manualSurvey');
   const manualStatus = document.getElementById('manualStatus');
 
-  manualForm.onsubmit = (e) => {
+  manualForm.onsubmit = async (e) => {
     e.preventDefault();
 
     const manualData = {
@@ -118,19 +192,13 @@
       manualStretchCount: Number(document.getElementById('manualStretchCount').value)
     };
 
-    fetch(DATA_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(manualData)
-    })
-    .then(() => {
+    try {
+      await postData(manualData);
       manualStatus.textContent = "Manual data submitted successfully!";
       manualForm.reset();
-    })
-    .catch(err => {
-      console.error(err);
-      manualStatus.textContent = "Error submitting manual data.";
-    });
+    } catch {
+      manualStatus.textContent = "Error submitting manual data. Check console for details.";
+    }
   };
 </script>
 
