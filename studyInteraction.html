@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Study Interaction & Sphero Setup</title>
+  <title>Study Interaction</title>
   <style>
     /* --- Navigation --- */
     nav {
@@ -36,29 +36,6 @@
       padding: 15px;
       border: 1px solid #ccc;
     }
-
-    /* --- Responsive PDF container --- */
-    .pdf-container {
-      position: relative;
-      width: 100%;
-      height: 0;
-      padding-bottom: 140%;
-      margin-top: 30px;
-    }
-    .pdf-container iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-    @media (min-width: 768px) {
-      .pdf-container {
-        height: 900px;
-        padding-bottom: 0;
-      }
-    }
   </style>
 </head>
 <body>
@@ -73,7 +50,7 @@
   <a href="post-survey.html">Post-Study Survey</a>
 </nav>
 
-<h1>Study Session</h1>
+<h2>Study Session</h2>
 <p>Click "Start Study" when you begin, "Stretch" when you stretch, and "Stop Study" when you end. Keep this page open while studying.</p>
 
 <button id="startBtn">Start Study</button>
@@ -98,7 +75,7 @@
 
 <script>
   // --- Google Apps Script Web App URL ---
-  const DATA_URL = "https://script.google.com/macros/s/AKfycbwXChzEV5Dev19AT0JVA2hLowzUKvYg5V2RqzKku_lDW7ceC4GtDuB-Uhx-8EdPNU0l/exec";
+  const DATA_URL = "https://script.google.com/macros/s/AKfycbw5oAhEdFYfzhJnxKeqMsZlhHUZMbfY6Z1D4OYBR3qmUkT9Vdmnatsdcgs8WDAghk3V/exec";
 
   // --- Variables ---
   let startTime = null;
@@ -110,7 +87,7 @@
   const stopBtn = document.getElementById('stopBtn');
   const status = document.getElementById('status');
 
-  // --- Helper function for POST requests ---
+  // --- Helper function for POST requests with logging ---
   async function postData(data) {
     try {
       const response = await fetch(DATA_URL, {
@@ -118,8 +95,18 @@
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
       });
-      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+      // Log the full HTTP response
+      console.log("HTTP response status:", response.status);
+      console.log("HTTP response headers:", [...response.headers.entries()]);
+
       const result = await response.json();
+      console.log("Server JSON response:", result);
+      
+      if (!response.ok || result.result !== "success") {
+        throw new Error(result.message || `Server returned status ${response.status}`);
+      }
+
       return result;
     } catch (err) {
       console.error("Error sending data:", err);
@@ -161,8 +148,8 @@
     try {
       await postData(sessionData);
       alert("Study session saved successfully!");
-    } catch {
-      alert("Error saving study session data. Check console for details.");
+    } catch (err) {
+      alert(`Error saving study session data. See console for details: ${err.message}`);
     }
 
     startBtn.disabled = false;
@@ -187,8 +174,8 @@
       await postData(manualData);
       manualStatus.textContent = "Manual data submitted successfully!";
       manualForm.reset();
-    } catch {
-      manualStatus.textContent = "Error submitting manual data. Check console for details.";
+    } catch (err) {
+      manualStatus.textContent = `Error submitting manual data. See console: ${err.message}`;
     }
   };
 </script>
