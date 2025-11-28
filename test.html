@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Apps Script Test</title>
+  <title>Apps Script Test (Form POST)</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     button { padding: 10px 15px; font-size: 16px; margin-top: 10px; }
@@ -10,31 +10,27 @@
 </head>
 <body>
 
-<h2>Apps Script Test</h2>
-<p>Click the button to send a test POST to your Apps Script endpoint.</p>
+<h2>Apps Script Test (Form POST)</h2>
+<p>Click the button to send a test POST to your Apps Script endpoint using a form (no CORS issues).</p>
 
-<button id="testBtn">Send Test POST</button>
+<form id="testForm" 
+      action="https://script.google.com/macros/s/AKfycbwE5usesVjLhcAx79HmDXv5ValQnuXsxV3TzuLO5rd2kV-klYXZOeMjnQaMAIZba3AX/exec" 
+      method="POST" 
+      target="hidden_iframe">
+  <input type="hidden" name="test" value="hello">
+  <button type="submit">Send Test POST</button>
+</form>
+
 <p id="result"></p>
 
+<!-- Hidden iframe to prevent page reload -->
+<iframe name="hidden_iframe" style="display:none;"></iframe>
+
 <script>
-  // Your fixed Apps Script web app URL
-  const DATA_URL = "https://script.google.com/macros/s/AKfycbx4Qk0md3aE6vF7gbZbXp8k_lH0YTiAPLav2H-bEIDKm_Zy2XCv4tGgj14Ovk4wXR53/exec";
   const resultEl = document.getElementById("result");
 
-  document.getElementById("testBtn").onclick = async () => {
-    resultEl.textContent = "Sending POST...";
-    try {
-      const response = await fetch(DATA_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ test: "hello" })
-      });
-      const json = await response.json();
-      resultEl.textContent = `Success! Response: ${JSON.stringify(json)}`;
-    } catch (err) {
-      console.error(err);
-      resultEl.textContent = `Failed: ${err.message}`;
-    }
+  document.getElementById("testForm").onsubmit = () => {
+    resultEl.textContent = "Form submitted! Check your Google Sheet for a new row.";
   };
 </script>
 
