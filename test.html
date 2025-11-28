@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Apps Script Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    button { padding: 10px 15px; font-size: 16px; margin-top: 10px; }
+    p { margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h2>Apps Script Test</h2>
+<p>Click the button to send a test POST to your Apps Script endpoint.</p>
+
+<button id="testBtn">Send Test POST</button>
+<p id="result"></p>
+
+<script>
+  // Your fixed Apps Script web app URL
+  const DATA_URL = "https://script.google.com/macros/s/AKfycbx4Qk0md3aE6vF7gbZbXp8k_lH0YTiAPLav2H-bEIDKm_Zy2XCv4tGgj14Ovk4wXR53/exec";
+  const resultEl = document.getElementById("result");
+
+  document.getElementById("testBtn").onclick = async () => {
+    resultEl.textContent = "Sending POST...";
+    try {
+      const response = await fetch(DATA_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ test: "hello" })
+      });
+      const json = await response.json();
+      resultEl.textContent = `Success! Response: ${JSON.stringify(json)}`;
+    } catch (err) {
+      console.error(err);
+      resultEl.textContent = `Failed: ${err.message}`;
+    }
+  };
+</script>
+
+</body>
+</html>
