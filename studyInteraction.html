@@ -3,44 +3,16 @@
 <head>
   <title>Study Interaction</title>
   <style>
-    /* --- Navigation --- */
-    nav {
-      background-color: #003366;
-      padding: 12px;
-      text-align: center;
-    }
-    nav a {
-      color: white;
-      margin: 0 15px;
-      text-decoration: none;
-      font-weight: bold;
-    }
+    nav { background-color: #003366; padding: 12px; text-align: center; }
+    nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
     nav a:hover { text-decoration: underline; }
-
-    /* --- Buttons --- */
-    button {
-      margin: 5px;
-      padding: 10px 15px;
-      font-size: 16px;
-    }
-
-    /* --- Status text --- */
-    #status, #manualStatus {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-
-    /* --- Survey container --- */
-    .survey-container {
-      margin-top: 30px;
-      padding: 15px;
-      border: 1px solid #ccc;
-    }
+    button { margin: 5px; padding: 10px 15px; font-size: 16px; }
+    .survey-container { margin-top: 30px; padding: 15px; border: 1px solid #ccc; }
+    #status, #manualStatus { font-weight: bold; margin-top: 10px; }
   </style>
 </head>
 <body>
 
-<!-- --- Navigation --- -->
 <nav>
   <a href="index.html">Instructions</a>
   <a href="pythonsetup.html">Set Up Instructions</a>
@@ -51,7 +23,7 @@
 </nav>
 
 <h2>Study Session</h2>
-<p>Click "Start Study" when you begin, "Stretch" when you stretch, and "Stop Study" when you end. Keep this page open while studying.</p>
+<p>Click "Start Study" when you begin, "Stretch" when you stretch, and "Stop Study" when you end. Please keep this page open while you are studying.</p>
 
 <button id="startBtn">Start Study</button>
 <button id="stretchBtn" disabled>Stretch</button>
@@ -63,58 +35,40 @@
   <h3>Manual Data Entry (if you forgot to use the buttons)</h3>
   <form id="manualSurvey">
     <label>Number of stretches: </label>
-    <input type="number" id="manualStretchCount" min="0"><br><br>
+    <input type="number" id="manualStretchCount" name="manualStretchCount" min="0"><br><br>
 
     <label>Estimated study session time (minutes): </label>
-    <input type="number" id="manualStudyTime" min="0"><br><br>
+    <input type="number" id="manualStudyTime" name="manualEstimatedTime" min="0"><br><br>
 
     <button type="submit">Submit Manual Data</button>
   </form>
   <p id="manualStatus"></p>
 </div>
 
+<!-- Hidden form for automatic session submission -->
+<form id="sessionForm" 
+      action="https://script.google.com/macros/s/AKfycbwE5usesVjLhcAx79HmDXv5ValQnuXsxV3TzuLO5rd2kV-klYXZOeMjnQaMAIZba3AX/exec" 
+      method="POST" 
+      target="hidden_iframe">
+  <input type="hidden" name="startTime" id="formStartTime">
+  <input type="hidden" name="endTime" id="formEndTime">
+  <input type="hidden" name="totalTimeSec" id="formTotalTimeSec">
+  <input type="hidden" name="stretchCount" id="formStretchCount">
+  <input type="hidden" name="stretchTimes" id="formStretchTimes">
+</form>
+
+<iframe name="hidden_iframe" style="display:none;"></iframe>
+
 <script>
-  // --- Google Apps Script Web App URL ---
-  const DATA_URL = "https://script.google.com/macros/s/AKfycbw5oAhEdFYfzhJnxKeqMsZlhHUZMbfY6Z1D4OYBR3qmUkT9Vdmnatsdcgs8WDAghk3V/exec";
-
-  // --- Variables ---
-  let startTime = null;
-  let stretchCount = 0;
-  let stretchTimes = [];
-
   const startBtn = document.getElementById('startBtn');
   const stretchBtn = document.getElementById('stretchBtn');
   const stopBtn = document.getElementById('stopBtn');
   const status = document.getElementById('status');
 
-  // --- Helper function for POST requests with logging ---
-  async function postData(data) {
-    try {
-      const response = await fetch(DATA_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-      });
+  let startTime = null;
+  let stretchCount = 0;
+  let stretchTimes = [];
 
-      // Log the full HTTP response
-      console.log("HTTP response status:", response.status);
-      console.log("HTTP response headers:", [...response.headers.entries()]);
-
-      const result = await response.json();
-      console.log("Server JSON response:", result);
-      
-      if (!response.ok || result.result !== "success") {
-        throw new Error(result.message || `Server returned status ${response.status}`);
-      }
-
-      return result;
-    } catch (err) {
-      console.error("Error sending data:", err);
-      throw err;
-    }
-  }
-
-  // --- Study session buttons ---
   startBtn.onclick = () => {
     startTime = Date.now();
     stretchCount = 0;
@@ -133,50 +87,58 @@
     status.textContent = `Stretch taken at ${elapsedSec}s. Total stretches: ${stretchCount}`;
   };
 
-  stopBtn.onclick = async () => {
+  stopBtn.onclick = () => {
     const endTime = Date.now();
     const totalTimeSec = ((endTime - startTime)/1000).toFixed(1);
 
-    const sessionData = {
-      startTime: new Date(startTime).toISOString(),
-      endTime: new Date(endTime).toISOString(),
-      totalTimeSec,
-      stretchCount,
-      stretchTimes
-    };
+    // Fill hidden form fields
+    document.getElementById('formStartTime').value = new Date(startTime).toISOString();
+    document.getElementById('formEndTime').value = new Date(endTime).toISOString();
+    document.getElementById('formTotalTimeSec').value = totalTimeSec;
+    document.getElementById('formStretchCount').value = stretchCount;
+    document.getElementById('formStretchTimes').value = stretchTimes.join(";");
 
-    try {
-      await postData(sessionData);
-      alert("Study session saved successfully!");
-    } catch (err) {
-      alert(`Error saving study session data. See console for details: ${err.message}`);
-    }
+    // Submit hidden form
+    document.getElementById('sessionForm').submit();
 
     startBtn.disabled = false;
     stretchBtn.disabled = true;
     stopBtn.disabled = true;
-    status.textContent = "Session ended.";
+    status.textContent = "Session ended. Data sent!";
   };
 
-  // --- Manual Survey Submission ---
+  // Manual survey submission
   const manualForm = document.getElementById('manualSurvey');
   const manualStatus = document.getElementById('manualStatus');
 
-  manualForm.onsubmit = async (e) => {
+  manualForm.onsubmit = (e) => {
     e.preventDefault();
+    
+    // Copy manual data into a temporary hidden form
+    const tempForm = document.createElement("form");
+    tempForm.method = "POST";
+    tempForm.action = "https://script.google.com/macros/s/AKfycbwE5usesVjLhcAx79HmDXv5ValQnuXsxV3TzuLO5rd2kV-klYXZOeMjnQaMAIZba3AX/exec";
+    tempForm.target = "hidden_iframe";
 
-    const manualData = {
-      manualEstimatedTime: Number(document.getElementById('manualStudyTime').value),
-      manualStretchCount: Number(document.getElementById('manualStretchCount').value)
-    };
+    const fields = [
+      {name: "manualStretchCount", value: document.getElementById('manualStretchCount').value},
+      {name: "manualEstimatedTime", value: document.getElementById('manualStudyTime').value}
+    ];
 
-    try {
-      await postData(manualData);
-      manualStatus.textContent = "Manual data submitted successfully!";
-      manualForm.reset();
-    } catch (err) {
-      manualStatus.textContent = `Error submitting manual data. See console: ${err.message}`;
-    }
+    fields.forEach(f => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = f.name;
+      input.value = f.value;
+      tempForm.appendChild(input);
+    });
+
+    document.body.appendChild(tempForm);
+    tempForm.submit();
+    document.body.removeChild(tempForm);
+
+    manualStatus.textContent = "Manual data submitted!";
+    manualForm.reset();
   };
 </script>
 
