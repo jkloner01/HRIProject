@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <tite> Set Up Instructions </tite>
+    <title> Set Up Instructions </title>
     <style>
       nav {
         background-color: #003366;
@@ -14,22 +14,43 @@
         text-decoration: none;
         font-weight: bold;
       }
-      nav a:hover{
+      nav a:hover {
         text-decoration: underline; 
       }
       ol, ul {
-        line-height: 1.6; 
-        
-        
+        line-height: 1.6;
       }
       li {
         margin-bottom: 0.75em;
-        line-height: 2; 
-        
+        line-height: 2;
       }
 
+      /* --- Responsive PDF container --- */
+      .pdf-container {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 140%; /* Adjusts height for mobile */
+      }
+
+      .pdf-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      @media (min-width: 768px) {
+        .pdf-container {
+          height: 900px;      /* Desktop height */
+          padding-bottom: 0;  /* Disable mobile ratio */
+        }
+      }
     </style>
   </head>
+
   <body>
     <nav>
       <a href="index.html"> Instructions </a>
@@ -39,7 +60,15 @@
       <a href="post-survey.html"> Post-Study Survey </a>
       <a href="pythonsetup.html"> Set Up Instructions</a>
     </nav>
-    <h1> Learn how to set up the sphero </h1> </h1>
+
+    <h1> Learn how to set up the Sphero </h1>
+
+    <!-- Responsive PDF Embed -->
+    <div class="pdf-container">
+      <iframe 
+        src="https://raw.githubusercontent.com/jkloner01/HRIProject/main/Python%20Sphero%20Setup.pdf">
+      </iframe>
+    </div>
 
   </body>
 </html>
