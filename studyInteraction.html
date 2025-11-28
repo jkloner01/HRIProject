@@ -1,78 +1,138 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <tite> Study Interaction </tite>
-    <style>
-      nav {
-        background-color: #003366;
-        padding: 12px;
-        text-align: center;
-      }
-      nav a {
-        color: white;
-        margin: 0 15px;
-        text-decoration: none;
-        font-weight: bold;
-      }
-      nav a:hover{
-        text-decoration: underline; 
-      }
-    </style>
-  </head>
-  <body>
-    <nav>
-      <a href="index.html"> Instructions </a>
-      <a href="pre-survey.html"> Pre-Study Survey </a>
-      <a href="studyInteraction.html"> Study Interaction </a>
-      <a href="mid-survey.html"> Mid-Study Survey </a>
-      <a href="post-survey.html"> Post-Study Survey </a>
-      <a href="pythonsetup.html"> Set Up Instructions </a>
-    </nav>
-    <h2> Study Sessions </h2>
-    <p> "Start Study" when you begin, "Stretch" when you stretch, and "Stop Study" when you end.</p>
-    <button id="startBtn" >Start Study</button>
-    <button id="stetchBtn" >Stretch</button>
-    <button id="stopBtn" >Stop Study</button>
-    <a href=""> Survey to be added in case user forgets to use the buttons above </a>
+<head>
+  <title>Study Interaction</title>
+  <style>
+    nav { background-color: #003366; padding: 12px; text-align: center; }
+    nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+    nav a:hover { text-decoration: underline; }
+    button { margin: 5px; padding: 10px 15px; font-size: 16px; }
+    .survey-container { margin-top: 30px; padding: 15px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
 
-    <p id="status"></p>
+<nav>
+  <a href="index.html">Instructions</a>
+  <a href="pre-survey.html">Pre-Study Survey</a>
+  <a href="studyInteraction.html">Study Interaction</a>
+  <a href="mid-survey.html">Mid-Study Survey</a>
+  <a href="post-survey.html">Post-Study Survey</a>
+  <a href="pythonsetup.html">Set Up Instructions</a>
+</nav>
 
-    <script>
-       let startTime, stretchCount=0, stretchTimes = [];
-       document.getElementByID('startBtn').onclick = () => {
-         startTime = Date.now();
-         stretchCount = 0; 
-         stretchTimes = [];
-         document.getElementByID('status').textContent = "Study session in progress."
-         document.getElementByID('startBtn').disabled = true; 
-         document.getElementByID('stretchBtn').disabled = false; 
-         document.getElementByID('stopBtn').disabled = false; 
-       };
-      document.getElementByID('stretchBtn').onclick = () => {
-        stretchCount++;
-        count elapsed = (Date.now() - startTime) / 1000;
-        stretchTimes.push(elapsed);
-        document.getElementByID('status').textContent = 'Stretch taken';
-      };
-      document.getElementByID('stopBtn').onclick = () => {
-        const endTime = Date.now();
-        const totalTime = {endTime - startTime) / 1000
+<h2>Study Session</h2>
+<p>Click "Start Study" when you begin, "Stretch" when you stretch, and "Stop Study" when you end.</p>
 
-        const data {
-          type: 'studyData',
-          totalTime,
-          stretchCount,
-          stretchTimes,
-        };
-        fetch('Date URL (Excel or Google Storage Sheet)', {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }).then(() => {
-          alert("Study session saved. You can close this window now."
-        };
-      };
-    </script>
-  </body>
+<button id="startBtn">Start Study</button>
+<button id="stretchBtn" disabled>Stretch</button>
+<button id="stopBtn" disabled>Stop Study</button>
+
+<p id="status"></p>
+
+<div class="survey-container">
+  <h3>Manual Data Entry (if you forgot to use the buttons)</h3>
+  <form id="manualSurvey">
+    <label>Number of stretches: </label>
+    <input type="number" id="manualStretchCount" min="0"><br><br>
+
+    <label>Estimated study session time (minutes): </label>
+    <input type="number" id="manualStudyTime" min="0"><br><br>
+
+    <button type="submit">Submit Manual Data</button>
+  </form>
+  <p id="manualStatus"></p>
+</div>
+
+<script>
+  // --- Google Apps Script Web App URL ---
+  const DATA_URL = "https://script.google.com/macros/s/AKfycbxe5HMIafrUoe44NW6PzYGL-vtOkYwiNnYlXkg3g00KOLZZu1mZ0g3nKKQaL93smgEt/exec";
+
+  // --- Variables ---
+  let startTime = null;
+  let stretchCount = 0;
+  let stretchTimes = [];
+
+  const startBtn = document.getElementById('startBtn');
+  const stretchBtn = document.getElementById('stretchBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const status = document.getElementById('status');
+
+  // --- Button Handlers ---
+  startBtn.onclick = () => {
+    startTime = Date.now();
+    stretchCount = 0;
+    stretchTimes = [];
+
+    status.textContent = "Study session in progress...";
+    startBtn.disabled = true;
+    stretchBtn.disabled = false;
+    stopBtn.disabled = false;
+  };
+
+  stretchBtn.onclick = () => {
+    stretchCount++;
+    const elapsedSec = ((Date.now() - startTime)/1000).toFixed(1);
+    stretchTimes.push(elapsedSec);
+    status.textContent = `Stretch taken at ${elapsedSec}s. Total stretches: ${stretchCount}`;
+  };
+
+  stopBtn.onclick = () => {
+    const endTime = Date.now();
+    const totalTimeSec = ((endTime - startTime)/1000).toFixed(1);
+
+    const sessionData = {
+      startTime: new Date(startTime).toISOString(),
+      endTime: new Date(endTime).toISOString(),
+      totalTimeSec,
+      stretchCount,
+      stretchTimes
+    };
+
+    fetch(DATA_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(sessionData)
+    })
+    .then(() => alert("Study session saved successfully!"))
+    .catch(err => {
+      console.error(err);
+      alert("Error saving study session data.");
+    });
+
+    startBtn.disabled = false;
+    stretchBtn.disabled = true;
+    stopBtn.disabled = true;
+    status.textContent = "Session ended.";
+  };
+
+  // --- Manual Survey Submission ---
+  const manualForm = document.getElementById('manualSurvey');
+  const manualStatus = document.getElementById('manualStatus');
+
+  manualForm.onsubmit = (e) => {
+    e.preventDefault();
+
+    const manualData = {
+      manualEstimatedTime: Number(document.getElementById('manualStudyTime').value),
+      manualStretchCount: Number(document.getElementById('manualStretchCount').value)
+    };
+
+    fetch(DATA_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(manualData)
+    })
+    .then(() => {
+      manualStatus.textContent = "Manual data submitted successfully!";
+      manualForm.reset();
+    })
+    .catch(err => {
+      console.error(err);
+      manualStatus.textContent = "Error submitting manual data.";
+    });
+  };
+</script>
+
+</body>
 </html>
-
-
