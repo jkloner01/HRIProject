@@ -33,11 +33,7 @@
 
 <div class="input-block">
   <label><strong>Study Group:</strong></label><br>
-  <select id="studyGroup" style="width: 250px;">
-    <option value="">-- Select Group --</option>
-    <option value="Social">Social</option>
-    <option value="Physical">Physical</option>
-  </select>
+  <input type="text" id="studyGroup" style="width: 250px;">
 </div>
 
 <p>Click "Start Study" when you begin, "Stretch" when you stretch, and "Stop Study" when you end.</p>
@@ -50,7 +46,7 @@
 
 <div class="survey-container">
   <h3>Manual Data Entry (if you forgot to use the buttons)</h3>
-  <form id="manualForm">
+  <form id="manualSurvey">
     <label>Number of stretches: </label>
     <input type="number" id="manualStretchCount" min="0"><br><br>
 
@@ -62,7 +58,12 @@
   <p id="manualStatus"></p>
 </div>
 
-<form id="sessionForm" action="https://script.google.com/macros/s/AKfycbwq86QuhRhKwyelaCIxibpsXHQqjUrjE72J0R-WadBxIcVVIZN8NAS8vOboR45oPUz9/exec" method="POST" target="hidden_iframe">
+<!-- Hidden form for all submissions -->
+<form id="sessionForm" 
+      action="https://script.google.com/macros/s/AKfycbwRufDbKrZNPZhM5HNfZfP8Py4sqy7X9_Rd-DbZEh_T9QkYAGv6erHdZMy4MpMU9AOO/exec" 
+      method="POST" 
+      target="hidden_iframe">
+
   <input type="hidden" name="participantName" id="formParticipantName">
   <input type="hidden" name="studyGroup" id="formStudyGroup">
   <input type="hidden" name="startTime" id="formStartTime">
@@ -77,92 +78,98 @@
 <iframe name="hidden_iframe" style="display:none;"></iframe>
 
 <script>
-const startBtn = document.getElementById('startBtn');
-const stretchBtn = document.getElementById('stretchBtn');
-const stopBtn = document.getElementById('stopBtn');
-const status = document.getElementById('status');
+  const startBtn = document.getElementById('startBtn');
+  const stretchBtn = document.getElementById('stretchBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const status = document.getElementById('status');
+  const manualForm = document.getElementById('manualSurvey');
+  const manualStatus = document.getElementById('manualStatus');
 
-let startTime = null;
-let stretchCount = 0;
-let stretchTimes = [];
+  let startTime = null;
+  let stretchCount = 0;
+  let stretchTimes = [];
 
-// Start Session
-startBtn.onclick = () => {
-  const name = document.getElementById('participantName').value.trim();
-  const group = document.getElementById('studyGroup').value.trim();
-
-  if (!name || !group) {
-    alert("Please enter both Participant Name and Study Group before starting.");
-    return;
+  // Helper: update hidden form with participant info
+  function updateHiddenForm() {
+    const name = document.getElementById('participantName').value.trim();
+    const group = document.getElementById('studyGroup').value.trim();
+    document.getElementById('formParticipantName').value = name;
+    document.getElementById('formStudyGroup').value = group;
   }
 
-  startTime = Date.now();
-  stretchCount = 0;
-  stretchTimes = [];
+  // Start Study
+  startBtn.onclick = () => {
+    updateHiddenForm();
+    const name = document.getElementById('participantName').value.trim();
+    const group = document.getElementById('studyGroup').value.trim();
 
-  status.textContent = "Study session in progress...";
-  startBtn.disabled = true;
-  stretchBtn.disabled = false;
-  stopBtn.disabled = false;
-};
+    if (!name || !group) {
+      alert("Please enter both Participant Name and Study Group before starting.");
+      return;
+    }
 
-// Stretch
-stretchBtn.onclick = () => {
-  stretchCount++;
-  const elapsedSec = ((Date.now() - startTime)/1000).toFixed(1);
-  stretchTimes.push(elapsedSec);
-  status.textContent = `Stretch at ${elapsedSec}s — Total stretches: ${stretchCount}`;
-};
+    startTime = Date.now();
+    stretchCount = 0;
+    stretchTimes = [];
 
-// Stop and submit session
-stopBtn.onclick = () => {
-  const name = document.getElementById('participantName').value.trim();
-  const group = document.getElementById('studyGroup').value.trim();
-  const endTime = Date.now();
-  const totalTimeSec = ((endTime - startTime)/1000).toFixed(1);
+    status.textContent = "Study session in progress...";
+    startBtn.disabled = true;
+    stretchBtn.disabled = false;
+    stopBtn.disabled = false;
+  };
 
-  // Fill hidden form fields
-  document.getElementById('formParticipantName').value = name;
-  document.getElementById('formStudyGroup').value = group;
-  document.getElementById('formStartTime').value = new Date(startTime).toISOString();
-  document.getElementById('formEndTime').value = new Date(endTime).toISOString();
-  document.getElementById('formTotalTimeSec').value = totalTimeSec;
-  document.getElementById('formStretchCount').value = stretchCount;
-  document.getElementById('formStretchTimes').value = stretchTimes.join(";");
+  // Log Stretch
+  stretchBtn.onclick = () => {
+    stretchCount++;
+    const elapsedSec = ((Date.now() - startTime)/1000).toFixed(1);
+    stretchTimes.push(elapsedSec);
+    status.textContent = `Stretch taken at ${elapsedSec}s. Total stretches: ${stretchCount}`;
+  };
 
-  // Submit
-  document.getElementById('sessionForm').submit();
+  // Stop Study and submit
+  stopBtn.onclick = () => {
+    updateHiddenForm();
+    const endTime = Date.now();
+    const totalTimeSec = ((endTime - startTime)/1000).toFixed(1);
 
-  startBtn.disabled = false;
-  stretchBtn.disabled = true;
-  stopBtn.disabled = true;
-  status.textContent = "Session ended. Data sent!";
-};
+    document.getElementById('formStartTime').value = new Date(startTime).toISOString();
+    document.getElementById('formEndTime').value = new Date(endTime).toISOString();
+    document.getElementById('formTotalTimeSec').value = totalTimeSec;
+    document.getElementById('formStretchCount').value = stretchCount;
+    document.getElementById('formStretchTimes').value = stretchTimes.join(";");
 
-// Manual form submission (updates same row)
-const manualForm = document.getElementById('manualForm');
-const manualStatus = document.getElementById('manualStatus');
+    // Clear manual fields
+    document.getElementById('formManualStretchCount').value = "";
+    document.getElementById('formManualEstimatedTime').value = "";
 
-manualForm.onsubmit = (e) => {
-  e.preventDefault();
+    document.getElementById('sessionForm').submit();
 
-  const name = document.getElementById('participantName').value.trim();
-  const group = document.getElementById('studyGroup').value.trim();
+    startBtn.disabled = false;
+    stretchBtn.disabled = true;
+    stopBtn.disabled = true;
+    status.textContent = "Session ended. Data sent!";
+  };
 
-  if (!name || !group) {
-    alert("Please enter both Participant Name and Study Group before submitting manual data.");
-    return;
-  }
+  // Manual submission
+  manualForm.onsubmit = (e) => {
+    e.preventDefault();
+    updateHiddenForm();
 
-  document.getElementById('formParticipantName').value = name;
-  document.getElementById('formStudyGroup').value = group;
-  document.getElementById('formManualStretchCount').value = document.getElementById('manualStretchCount').value || "";
-  document.getElementById('formManualEstimatedTime').value = document.getElementById('manualStudyTime').value || "";
+    document.getElementById('formManualStretchCount').value = document.getElementById('manualStretchCount').value;
+    document.getElementById('formManualEstimatedTime').value = document.getElementById('manualStudyTime').value;
 
-  document.getElementById('sessionForm').submit();
-  manualStatus.textContent = "Manual data submitted!";
-  manualForm.reset();
-};
+    // Clear button session fields
+    document.getElementById('formStartTime').value = "";
+    document.getElementById('formEndTime').value = "";
+    document.getElementById('formTotalTimeSec').value = "";
+    document.getElementById('formStretchCount').value = "";
+    document.getElementById('formStretchTimes').value = "";
+
+    document.getElementById('sessionForm').submit();
+
+    manualStatus.textContent = "Manual data submitted!";
+    manualForm.reset();
+  };
 </script>
 
 </body>
