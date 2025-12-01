@@ -58,12 +58,11 @@
   <p id="manualStatus"></p>
 </div>
 
-<!-- Hidden form for all submissions -->
+<!-- Hidden form for automatic session submission -->
 <form id="sessionForm" 
       action="https://script.google.com/macros/s/AKfycbwRufDbKrZNPZhM5HNfZfP8Py4sqy7X9_Rd-DbZEh_T9QkYAGv6erHdZMy4MpMU9AOO/exec" 
       method="POST" 
       target="hidden_iframe">
-
   <input type="hidden" name="participantName" id="formParticipantName">
   <input type="hidden" name="studyGroup" id="formStudyGroup">
   <input type="hidden" name="startTime" id="formStartTime">
@@ -71,8 +70,8 @@
   <input type="hidden" name="totalTimeSec" id="formTotalTimeSec">
   <input type="hidden" name="stretchCount" id="formStretchCount">
   <input type="hidden" name="stretchTimes" id="formStretchTimes">
-  <input type="hidden" name="manualStretchCount" id="formManualStretchCount">
   <input type="hidden" name="manualEstimatedTime" id="formManualEstimatedTime">
+  <input type="hidden" name="manualStretchCount" id="formManualStretchCount">
 </form>
 
 <iframe name="hidden_iframe" style="display:none;"></iframe>
@@ -82,56 +81,45 @@
   const stretchBtn = document.getElementById('stretchBtn');
   const stopBtn = document.getElementById('stopBtn');
   const status = document.getElementById('status');
-  const manualForm = document.getElementById('manualSurvey');
-  const manualStatus = document.getElementById('manualStatus');
 
   let startTime = null;
   let stretchCount = 0;
   let stretchTimes = [];
 
-  // Helper: update hidden form with participant info
-  function updateHiddenForm() {
-    const name = document.getElementById('participantName').value.trim();
-    const group = document.getElementById('studyGroup').value.trim();
-    document.getElementById('formParticipantName').value = name;
-    document.getElementById('formStudyGroup').value = group;
-  }
-
-  // Start Study
+  // Start session
   startBtn.onclick = () => {
-    updateHiddenForm();
     const name = document.getElementById('participantName').value.trim();
     const group = document.getElementById('studyGroup').value.trim();
-
     if (!name || !group) {
-      alert("Please enter both Participant Name and Study Group before starting.");
+      alert("Enter both Participant Name and Study Group before starting.");
       return;
     }
-
     startTime = Date.now();
     stretchCount = 0;
     stretchTimes = [];
-
     status.textContent = "Study session in progress...";
     startBtn.disabled = true;
     stretchBtn.disabled = false;
     stopBtn.disabled = false;
   };
 
-  // Log Stretch
+  // Log stretch
   stretchBtn.onclick = () => {
     stretchCount++;
     const elapsedSec = ((Date.now() - startTime)/1000).toFixed(1);
     stretchTimes.push(elapsedSec);
-    status.textContent = `Stretch taken at ${elapsedSec}s. Total stretches: ${stretchCount}`;
+    status.textContent = `Stretch at ${elapsedSec}s — Total stretches: ${stretchCount}`;
   };
 
-  // Stop Study and submit
+  // Stop session and submit
   stopBtn.onclick = () => {
-    updateHiddenForm();
+    const name = document.getElementById('participantName').value.trim();
+    const group = document.getElementById('studyGroup').value.trim();
     const endTime = Date.now();
     const totalTimeSec = ((endTime - startTime)/1000).toFixed(1);
 
+    document.getElementById('formParticipantName').value = name;
+    document.getElementById('formStudyGroup').value = group;
     document.getElementById('formStartTime').value = new Date(startTime).toISOString();
     document.getElementById('formEndTime').value = new Date(endTime).toISOString();
     document.getElementById('formTotalTimeSec').value = totalTimeSec;
@@ -139,11 +127,10 @@
     document.getElementById('formStretchTimes').value = stretchTimes.join(";");
 
     // Clear manual fields
-    document.getElementById('formManualStretchCount').value = "";
     document.getElementById('formManualEstimatedTime').value = "";
+    document.getElementById('formManualStretchCount').value = "";
 
     document.getElementById('sessionForm').submit();
-
     startBtn.disabled = false;
     stretchBtn.disabled = true;
     stopBtn.disabled = true;
@@ -151,10 +138,19 @@
   };
 
   // Manual submission
+  const manualForm = document.getElementById('manualSurvey');
+  const manualStatus = document.getElementById('manualStatus');
+
   manualForm.onsubmit = (e) => {
     e.preventDefault();
-    updateHiddenForm();
-
+    const name = document.getElementById('participantName').value.trim();
+    const group = document.getElementById('studyGroup').value.trim();
+    if (!name || !group) {
+      alert("Enter both Participant Name and Study Group before submitting manual data.");
+      return;
+    }
+    document.getElementById('formParticipantName').value = name;
+    document.getElementById('formStudyGroup').value = group;
     document.getElementById('formManualStretchCount').value = document.getElementById('manualStretchCount').value;
     document.getElementById('formManualEstimatedTime').value = document.getElementById('manualStudyTime').value;
 
@@ -166,7 +162,6 @@
     document.getElementById('formStretchTimes').value = "";
 
     document.getElementById('sessionForm').submit();
-
     manualStatus.textContent = "Manual data submitted!";
     manualForm.reset();
   };
