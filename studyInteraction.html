@@ -26,13 +26,12 @@
 <h2>Study Session</h2>
 <p>Please enter your information before starting.</p>
 
-<!-- Single Name Input -->
+<!-- Participant Info -->
 <div class="input-block">
   <label><strong>Participant Name:</strong></label><br>
   <input type="text" id="participantName" style="width: 250px;">
 </div>
 
-<!-- Single Study Group Dropdown -->
 <div class="input-block">
   <label><strong>Study Group:</strong></label><br>
   <select id="studyGroup" style="width: 250px;">
@@ -42,7 +41,7 @@
   </select>
 </div>
 
-<p>Click "Start Study" to begin, "Stretch" when you stretch, and "Stop Study" when you're done.</p>
+<p>Click "Start Study" to begin, "Stretch" when you stretch, and "Stop Study" when you end.</p>
 
 <button id="startBtn">Start Study</button>
 <button id="stretchBtn" disabled>Stretch</button>
@@ -50,37 +49,35 @@
 
 <p id="status"></p>
 
-<!-- Manual Entry -->
+<!-- Manual Data Entry -->
 <div class="survey-container">
-  <h3>Manual Data Entry (uses same name + group above)</h3>
-
+  <h3>Manual Data Entry (if you forgot to use the buttons)</h3>
   <form id="manualSurvey">
-    <label>Number of stretches:</label><br>
+    <label>Number of stretches: </label>
     <input type="number" id="manualStretchCount" min="0"><br><br>
 
-    <label>Estimated study session time (minutes):</label><br>
+    <label>Estimated study session time (minutes): </label>
     <input type="number" id="manualStudyTime" min="0"><br><br>
 
     <button type="submit">Submit Manual Data</button>
   </form>
-
   <p id="manualStatus"></p>
 </div>
 
-<!-- Hidden automatic session form -->
-<form id="sessionForm" 
-      action="YOUR_GOOGLE_APPS_SCRIPT_URL"
-      method="POST" 
+<!-- Hidden form for submission -->
+<form id="sessionForm"
+      action="https://script.google.com/macros/s/AKfycbwq86QuhRhKwyelaCIxibpsXHQqjUrjE72J0R-WadBxIcVVIZN8NAS8vOboR45oPUz9/exec"
+      method="POST"
       target="hidden_iframe">
-
   <input type="hidden" name="participantName" id="formParticipantName">
   <input type="hidden" name="studyGroup" id="formStudyGroup">
-
   <input type="hidden" name="startTime" id="formStartTime">
   <input type="hidden" name="endTime" id="formEndTime">
   <input type="hidden" name="totalTimeSec" id="formTotalTimeSec">
   <input type="hidden" name="stretchCount" id="formStretchCount">
   <input type="hidden" name="stretchTimes" id="formStretchTimes">
+  <input type="hidden" name="manualEstimatedTime" id="formManualEstimatedTime">
+  <input type="hidden" name="manualStretchCount" id="formManualStretchCount">
 </form>
 
 <iframe name="hidden_iframe" style="display:none;"></iframe>
@@ -95,15 +92,13 @@
   let stretchCount = 0;
   let stretchTimes = [];
 
-  // ---------------------------
-  // BUTTON MODE
-  // ---------------------------
+  // Start session
   startBtn.onclick = () => {
     const name = document.getElementById('participantName').value.trim();
-    const group = document.getElementById('studyGroup').value.trim();
+    const group = document.getElementById('studyGroup').value;
 
     if (!name || !group) {
-      alert("Please enter both Participant Name and Study Group.");
+      alert("Please enter Participant Name and select Study Group.");
       return;
     }
 
@@ -117,42 +112,41 @@
     stopBtn.disabled = false;
   };
 
+  // Log stretch
   stretchBtn.onclick = () => {
     stretchCount++;
-    const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(1);
+    const elapsedSec = ((Date.now() - startTime)/1000).toFixed(1);
     stretchTimes.push(elapsedSec);
-
-    status.textContent = `Stretch taken at ${elapsedSec}s. Total stretches: ${stretchCount}`;
+    status.textContent = `Stretch at ${elapsedSec}s — Total stretches: ${stretchCount}`;
   };
 
+  // Stop session and send data
   stopBtn.onclick = () => {
     const name = document.getElementById('participantName').value.trim();
-    const group = document.getElementById('studyGroup').value.trim();
+    const group = document.getElementById('studyGroup').value;
 
     const endTime = Date.now();
-    const totalTimeSec = ((endTime - startTime) / 1000).toFixed(1);
+    const totalTimeSec = ((endTime - startTime)/1000).toFixed(1);
 
+    // Fill hidden form
     document.getElementById('formParticipantName').value = name;
     document.getElementById('formStudyGroup').value = group;
-
     document.getElementById('formStartTime').value = new Date(startTime).toISOString();
     document.getElementById('formEndTime').value = new Date(endTime).toISOString();
     document.getElementById('formTotalTimeSec').value = totalTimeSec;
     document.getElementById('formStretchCount').value = stretchCount;
     document.getElementById('formStretchTimes').value = stretchTimes.join(";");
 
+    // Submit
     document.getElementById('sessionForm').submit();
 
     startBtn.disabled = false;
     stretchBtn.disabled = true;
     stopBtn.disabled = true;
-
     status.textContent = "Session ended. Data sent!";
   };
 
-  // ---------------------------
-  // MANUAL MODE
-  // ---------------------------
+  // Manual submission
   const manualForm = document.getElementById('manualSurvey');
   const manualStatus = document.getElementById('manualStatus');
 
@@ -160,26 +154,18 @@
     e.preventDefault();
 
     const name = document.getElementById('participantName').value.trim();
-    const group = document.getElementById('studyGroup').value.trim();
-
-    if (!name || !group) {
-      alert("Please enter Participant Name and Study Group at the top first!");
-      return;
-    }
-
-    const stretchCount = document.getElementById('manualStretchCount').value;
-    const studyTime = document.getElementById('manualStudyTime').value;
+    const group = document.getElementById('studyGroup').value;
 
     const tempForm = document.createElement("form");
     tempForm.method = "POST";
-    tempForm.action = "YOUR_GOOGLE_APPS_SCRIPT_URL";
+    tempForm.action = "https://script.google.com/macros/s/AKfycbwq86QuhRhKwyelaCIxibpsXHQqjUrjE72J0R-WadBxIcVVIZN8NAS8vOboR45oPUz9/exec";
     tempForm.target = "hidden_iframe";
 
     const fields = [
       {name: "participantName", value: name},
       {name: "studyGroup", value: group},
-      {name: "manualStretchCount", value: stretchCount},
-      {name: "manualEstimatedTime", value: studyTime}
+      {name: "manualStretchCount", value: document.getElementById('manualStretchCount').value},
+      {name: "manualEstimatedTime", value: document.getElementById('manualStudyTime').value}
     ];
 
     fields.forEach(f => {
